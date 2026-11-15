@@ -14,7 +14,6 @@
 <body class="pb-16 select-none">
 
   <script>
-    // 🔥 Buyer App-এ যে Firebase URL দিয়েছেন, ঠিক সেই একই URL এখানে বসান
     const FIREBASE_DB_URL = "https://khidmatun-nas-default-rtdb.asia-southeast1.firebasedatabase.app";
   </script>
 
@@ -52,7 +51,7 @@
       <!-- ২. প্রোডাক্ট ম্যানেজমেন্ট ট্যাব -->
       <div id="viewProducts" class="hidden space-y-4">
         <button onclick="openProductForm()" class="w-full py-3 rounded-2xl bg-emerald-800 text-white font-bold text-sm shadow-md">
-          + নতুন পণ্য ও একাধিক ছবি যোগ করুন
+          + নতুন পণ্য, পরিমাণ (কেজি/পিস) ও ছবি যোগ করুন
         </button>
         <div id="adminProductList" class="space-y-2.5"></div>
       </div>
@@ -77,11 +76,11 @@
           </div>
           <div class="grid grid-cols-2 gap-2.5">
             <div>
-              <label class="font-bold text-slate-600">শহরের ভেতরে ডেলিভারি (৳)</label>
+              <label class="font-bold text-slate-600">খুলনার ভেতরে ডেলিভারি (৳)</label>
               <input type="number" id="setInsideCharge" class="w-full mt-1 px-3 py-2.5 rounded-xl border">
             </div>
             <div>
-              <label class="font-bold text-slate-600">সারা দেশে ডেলিভারি (৳)</label>
+              <label class="font-bold text-slate-600">খুলনার বাইরে ডেলিভারি (৳)</label>
               <input type="number" id="setOutsideCharge" class="w-full mt-1 px-3 py-2.5 rounded-xl border">
             </div>
           </div>
@@ -98,7 +97,7 @@
     </main>
   </div>
 
-  <!-- প্রোডাক্ট অ্যাড/এডিট মোডাল (একাধিক ছবিসহ) -->
+  <!-- প্রোডাক্ট অ্যাড/এডিট মোডাল (পরিমাণ/ভ্যারিয়েন্ট ও একাধিক ছবিসহ) -->
   <div id="productFormModal" class="hidden fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center">
     <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] flex flex-col overflow-hidden">
       <div class="p-4 border-b bg-slate-900 text-white flex justify-between items-center">
@@ -109,7 +108,7 @@
         <input type="hidden" id="editProdId">
         <div>
           <label class="font-bold text-slate-700">পণ্যের নাম *</label>
-          <input type="text" id="prodName" placeholder="যেমন: সুন্দরবনের খাঁটি খলিশা মধু (১ কেজি)" class="w-full mt-1 px-3 py-2.5 rounded-xl border">
+          <input type="text" id="prodName" placeholder="যেমন: সুন্দরবনের খাঁটি খলিশা মধু" class="w-full mt-1 px-3 py-2.5 rounded-xl border">
         </div>
         <div>
           <label class="font-bold text-slate-700">ক্যাটাগরি</label>
@@ -119,15 +118,29 @@
             <option value="combo">🎁 কম্বো প্যাক</option>
           </select>
         </div>
-        <div class="grid grid-cols-2 gap-2.5">
-          <div>
-            <label class="font-bold text-slate-700">আগের দাম (কাটা থাকবে)</label>
-            <input type="number" id="prodOrigPrice" placeholder="যেমন: 500" class="w-full mt-1 px-3 py-2.5 rounded-xl border">
+
+        <!-- পরিমাণ / ভ্যারিয়েন্ট ও দাম সেকশন -->
+        <div class="bg-emerald-50/70 p-3 rounded-xl border border-emerald-200 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="font-bold text-emerald-950">⚖️ পণ্যের পরিমাণ (কেজি / পিস) ও দাম *</label>
+            <button type="button" onclick="addVariantRow()" class="px-2.5 py-1 rounded-lg bg-emerald-800 text-white font-bold text-[11px]">+ আরও সাইজ যোগ</button>
           </div>
-          <div>
-            <label class="font-bold text-emerald-800">বর্তমান বিক্রয় মূল্য *</label>
-            <input type="number" id="prodSalePrice" placeholder="যেমন: 400" class="w-full mt-1 px-3 py-2.5 rounded-xl border">
+          <p class="text-[11px] text-slate-600">যেমন: আধা কেজি, 1 kg, 1.5 kg, 2 kg, 2.5 kg, 3 kg অথবা একটি, দুইটি, তিনটি।</p>
+
+          <!-- দ্রুত ভ্যারিয়েন্ট প্রিসেট বাটন -->
+          <div class="flex flex-wrap gap-1">
+            <button type="button" onclick="addVariantRow('আধা কেজি')" class="px-2 py-0.5 rounded bg-white border border-emerald-300 text-[10px] font-bold text-emerald-900">+ আধা কেজি</button>
+            <button type="button" onclick="addVariantRow('1 kg')" class="px-2 py-0.5 rounded bg-white border border-emerald-300 text-[10px] font-bold text-emerald-900">+ 1 kg</button>
+            <button type="button" onclick="addVariantRow('1.5 kg')" class="px-2 py-0.5 rounded bg-white border border-emerald-300 text-[10px] font-bold text-emerald-900">+ 1.5 kg</button>
+            <button type="button" onclick="addVariantRow('2 kg')" class="px-2 py-0.5 rounded bg-white border border-emerald-300 text-[10px] font-bold text-emerald-900">+ 2 kg</button>
+            <button type="button" onclick="addVariantRow('2.5 kg')" class="px-2 py-0.5 rounded bg-white border border-emerald-300 text-[10px] font-bold text-emerald-900">+ 2.5 kg</button>
+            <button type="button" onclick="addVariantRow('3 kg')" class="px-2 py-0.5 rounded bg-white border border-emerald-300 text-[10px] font-bold text-emerald-900">+ 3 kg</button>
+            <button type="button" onclick="addVariantRow('একটি')" class="px-2 py-0.5 rounded bg-white border border-amber-300 text-[10px] font-bold text-amber-900">+ একটি</button>
+            <button type="button" onclick="addVariantRow('দুইটি')" class="px-2 py-0.5 rounded bg-white border border-amber-300 text-[10px] font-bold text-amber-900">+ দুইটি</button>
+            <button type="button" onclick="addVariantRow('তিনটি')" class="px-2 py-0.5 rounded bg-white border border-amber-300 text-[10px] font-bold text-amber-900">+ তিনটি</button>
           </div>
+
+          <div id="variantsContainer" class="space-y-2 pt-1"></div>
         </div>
 
         <!-- একাধিক ছবি আপলোড সেকশন -->
@@ -139,7 +152,6 @@
               <input type="file" accept="image/*" multiple onchange="handleMultiImageUpload(event)" class="hidden">
             </label>
           </div>
-          <p class="text-[11px] text-slate-500">গ্যালারি থেকে একসাথে একাধিক ছবি সিলেক্ট করতে পারবেন বা বারবার যোগ করতে পারবেন।</p>
           <div id="multiImagePreviewGrid" class="grid grid-cols-4 gap-2 pt-1"></div>
         </div>
 
@@ -184,13 +196,9 @@
     }
 
     async function loadAllData() {
-      if (!FIREBASE_DB_URL || FIREBASE_DB_URL.includes("YOUR-PROJECT-ID")) {
-        alert("⚠️ অনুগ্রহ করে কোডে আপনার Firebase URL বসান।");
-        return;
-      }
       document.getElementById('syncStatusText').innerText = "সিঙ্ক হচ্ছে...";
       try {
-        const res = await fetch(`${FIREBASE_DB_URL}/khidmatun_nas.json`);
+        const res = await fetch(FIREBASE_DB_URL + '/khidmatun_nas.json');
         const data = await res.json();
         if (data) {
           if (data.settings) dbState.settings = { ...dbState.settings, ...data.settings };
@@ -208,13 +216,13 @@
 
     function switchTab(tab) {
       ['orders', 'products', 'settings'].forEach(t => {
-        document.getElementById(`view${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.add('hidden');
-        const btn = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        document.getElementById('view' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('hidden');
+        const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
         btn.classList.remove('bg-emerald-800', 'text-white');
         btn.classList.add('bg-slate-100', 'text-slate-700');
       });
-      document.getElementById(`view${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.remove('hidden');
-      const activeBtn = document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
+      document.getElementById('view' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.remove('hidden');
+      const activeBtn = document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
       activeBtn.classList.remove('bg-slate-100', 'text-slate-700');
       activeBtn.classList.add('bg-emerald-800', 'text-white');
     }
@@ -226,50 +234,61 @@
       document.getElementById('orderCountBadge').innerText = orderArr.length;
 
       if (orderArr.length === 0) {
-        container.innerHTML = `<div class="text-center py-12 text-slate-400 text-sm bg-white rounded-2xl border">এখনো কোনো অর্ডার আসেনি।</div>`;
+        container.innerHTML = '<div class="text-center py-12 text-slate-400 text-sm bg-white rounded-2xl border">এখনো কোনো অর্ডার আসেনি।</div>';
         return;
       }
 
-      container.innerHTML = orderArr.map(o => `
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-2.5 text-xs">
-          <div class="flex justify-between items-center border-b pb-2">
-            <div>
-              <span class="font-mono font-bold text-sm text-emerald-900">#${o.id}</span>
-              <span class="text-[11px] text-slate-400 block">${o.date || ''}</span>
-            </div>
-            <select onchange="updateOrderStatus('${o.id}', this.value)" class="px-2.5 py-1 rounded-lg border font-bold bg-amber-50 text-amber-900">
-              <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>⏳ Pending (নতুন)</option>
-              <option value="Confirmed" ${o.status === 'Confirmed' ? 'selected' : ''}>✅ Confirmed</option>
-              <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>🚚 Delivered</option>
-              <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>❌ Cancelled</option>
-            </select>
-          </div>
+      container.innerHTML = orderArr.map(o => {
+        const zoneBadge = o.deliveryZone
+          ? '<span class="ml-1.5 px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 text-[10px] font-bold">' + o.deliveryZone + '</span>'
+          : '';
+        const dueInfo = (o.dueAmount !== undefined && o.dueAmount > 0)
+          ? '<span class="text-red-700 font-bold">বকেয়া (কন্ডিশন): ৳' + o.dueAmount + '</span>'
+          : '<span class="text-emerald-700 font-bold">সম্পূর্ণ পরিশোধিত</span>';
 
-          <div class="space-y-1">
-            <div class="flex justify-between items-center">
-              <span class="font-bold text-sm text-slate-800">👤 ${o.customerName}</span>
-              <a href="tel:${o.customerPhone}" class="px-3 py-1 rounded-lg bg-emerald-700 text-white font-bold">📲 কল: ${o.customerPhone}</a>
-            </div>
-            <p class="text-slate-600">📍 ${o.customerAddress}</p>
-          </div>
+        return (
+          '<div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-2.5 text-xs">' +
+            '<div class="flex justify-between items-center border-b pb-2">' +
+              '<div>' +
+                '<span class="font-mono font-bold text-sm text-emerald-900">#' + o.id + '</span>' + zoneBadge +
+                '<span class="text-[11px] text-slate-400 block">' + (o.date || '') + '</span>' +
+              '</div>' +
+              '<select onchange="updateOrderStatus(\'' + o.id + '\', this.value)" class="px-2.5 py-1 rounded-lg border font-bold bg-amber-50 text-amber-900">' +
+                '<option value="Pending" ' + (o.status === 'Pending' ? 'selected' : '') + '>⏳ Pending (নতুন)</option>' +
+                '<option value="Confirmed" ' + (o.status === 'Confirmed' ? 'selected' : '') + '>✅ Confirmed</option>' +
+                '<option value="Delivered" ' + (o.status === 'Delivered' ? 'selected' : '') + '>🚚 Delivered</option>' +
+                '<option value="Cancelled" ' + (o.status === 'Cancelled' ? 'selected' : '') + '>❌ Cancelled</option>' +
+              '</select>' +
+            '</div>' +
 
-          <div class="bg-slate-50 p-2.5 rounded-xl border space-y-1">
-            ${(o.items || []).map(i => `<div class="flex justify-between"><span>• ${i.name} × ${i.qty}</span><span>৳${i.price * i.qty}</span></div>`).join('')}
-            <div class="flex justify-between font-bold text-emerald-900 pt-1 border-t">
-              <span>মোট বিল:</span><span>৳${o.totalAmount}</span>
-            </div>
-          </div>
+            '<div class="space-y-1">' +
+              '<div class="flex justify-between items-center">' +
+                '<span class="font-bold text-sm text-slate-800">👤 ' + o.customerName + '</span>' +
+                '<a href="tel:' + o.customerPhone + '" class="px-3 py-1 rounded-lg bg-emerald-700 text-white font-bold">📲 কল: ' + o.customerPhone + '</a>' +
+              '</div>' +
+              '<p class="text-slate-600">📍 ' + o.customerAddress + '</p>' +
+            '</div>' +
 
-          <div class="flex justify-between items-center bg-pink-50 px-3 py-2 rounded-xl border border-pink-200">
-            <span class="font-bold text-pink-800">💳 ${o.paymentMethod} TrxID:</span>
-            <span class="font-mono font-bold text-sm text-pink-950">${o.trxId}</span>
-          </div>
-        </div>
-      `).join('');
+            '<div class="bg-slate-50 p-2.5 rounded-xl border space-y-1">' +
+              (o.items || []).map(i =>
+                '<div class="flex justify-between"><span>• ' + i.name + (i.variantLabel ? ' <strong>[' + i.variantLabel + ']</strong>' : '') + ' × ' + i.qty + '</span><span>৳' + (i.price * i.qty) + '</span></div>'
+              ).join('') +
+              '<div class="flex justify-between font-bold text-emerald-900 pt-1 border-t">' +
+                '<span>মোট বিল: ৳' + o.totalAmount + '</span>' + dueInfo +
+              '</div>' +
+            '</div>' +
+
+            '<div class="flex justify-between items-center bg-pink-50 px-3 py-2 rounded-xl border border-pink-200">' +
+              '<span class="font-bold text-pink-800">💳 ' + o.paymentMethod + '</span>' +
+              '<span class="font-mono font-bold text-xs text-pink-950">TrxID: ' + o.trxId + '</span>' +
+            '</div>' +
+          '</div>'
+        );
+      }).join('');
     }
 
     async function updateOrderStatus(orderId, newStatus) {
-      await fetch(`${FIREBASE_DB_URL}/khidmatun_nas/orders/${orderId}/status.json`, {
+      await fetch(FIREBASE_DB_URL + '/khidmatun_nas/orders/' + orderId + '/status.json', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newStatus)
@@ -285,26 +304,42 @@
 
       container.innerHTML = prodArr.map(p => {
         const imgs = (p.images && p.images.length) ? p.images : (p.image ? [p.image] : []);
-        return `
-          <div class="bg-white p-3 rounded-2xl border flex items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-              <img src="${imgs[0] || ''}" class="w-14 h-14 rounded-xl object-cover bg-slate-100 border">
-              <div>
-                <h4 class="font-bold text-xs sm:text-sm text-slate-800">${p.name}</h4>
-                <div class="text-xs mt-0.5">
-                  <span class="font-bold text-emerald-800">৳${p.salePrice}</span>
-                  ${p.originalPrice ? `<span class="line-through text-slate-400 ml-1">৳${p.originalPrice}</span>` : ''}
-                  <span class="ml-2 text-[11px] bg-slate-100 px-1.5 py-0.5 rounded">📷 ${imgs.length}টি ছবি</span>
-                </div>
-              </div>
-            </div>
-            <div class="flex flex-col gap-1.5">
-              <button onclick="openProductForm('${p.id}')" class="px-3 py-1 rounded-lg bg-amber-100 text-amber-900 text-xs font-bold">✏️ এডিট</button>
-              <button onclick="deleteProduct('${p.id}')" class="px-3 py-1 rounded-lg bg-red-100 text-red-700 text-xs font-bold">🗑️ ডিলিট</button>
-            </div>
-          </div>
-        `;
+        const variants = (p.variants && p.variants.length)
+          ? p.variants
+          : [{ label: 'স্ট্যান্ডার্ড', salePrice: p.salePrice, originalPrice: p.originalPrice }];
+
+        const varSummary = variants.map(v => v.label + ': ৳' + v.salePrice).join(' | ');
+
+        return (
+          '<div class="bg-white p-3 rounded-2xl border flex items-center justify-between gap-3">' +
+            '<div class="flex items-center gap-3">' +
+              '<img src="' + (imgs[0] || '') + '" class="w-14 h-14 rounded-xl object-cover bg-slate-100 border shrink-0">' +
+              '<div>' +
+                '<h4 class="font-bold text-xs sm:text-sm text-slate-800">' + p.name + '</h4>' +
+                '<div class="text-[11px] font-semibold text-emerald-800 mt-0.5">' + varSummary + '</div>' +
+                '<span class="inline-block mt-1 text-[10px] bg-slate-100 px-1.5 py-0.5 rounded">📷 ' + imgs.length + 'টি ছবি</span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="flex flex-col gap-1.5 shrink-0">' +
+              '<button onclick="openProductForm(\'' + p.id + '\')" class="px-3 py-1 rounded-lg bg-amber-100 text-amber-900 text-xs font-bold">✏️ এডিট</button>' +
+              '<button onclick="deleteProduct(\'' + p.id + '\')" class="px-3 py-1 rounded-lg bg-red-100 text-red-700 text-xs font-bold">🗑️ ডিলিট</button>' +
+            '</div>' +
+          '</div>'
+        );
       }).join('');
+    }
+
+    // ভ্যারিয়েন্ট রো যোগ করা
+    function addVariantRow(label = '', origPrice = '', salePrice = '') {
+      const container = document.getElementById('variantsContainer');
+      const row = document.createElement('div');
+      row.className = 'variant-row grid grid-cols-12 gap-1.5 items-center bg-white p-2 rounded-xl border border-emerald-200';
+      row.innerHTML =
+        '<input type="text" placeholder="পরিমাণ (যেমন: 1 kg)" value="' + label + '" class="var-label col-span-5 px-2 py-1.5 rounded-lg border text-xs font-bold">' +
+        '<input type="number" placeholder="আগের দাম" value="' + origPrice + '" class="var-orig col-span-3 px-2 py-1.5 rounded-lg border text-xs">' +
+        '<input type="number" placeholder="বিক্রয় দাম *" value="' + salePrice + '" class="var-sale col-span-3 px-2 py-1.5 rounded-lg border text-xs font-bold text-emerald-800">' +
+        '<button type="button" onclick="this.parentElement.remove()" class="col-span-1 text-red-600 font-bold text-center">✕</button>';
+      container.appendChild(row);
     }
 
     // একাধিক ছবি কমপ্রেস ও আপলোড হ্যান্ডলার
@@ -334,12 +369,12 @@
 
     function renderImagePreviews() {
       const grid = document.getElementById('multiImagePreviewGrid');
-      grid.innerHTML = currentProductImages.map((src, idx) => `
-        <div class="relative aspect-square rounded-xl overflow-hidden border bg-white">
-          <img src="${src}" class="w-full h-full object-cover">
-          <button type="button" onclick="removePreviewImage(${idx})" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 text-white text-[10px] font-bold">✕</button>
-        </div>
-      `).join('');
+      grid.innerHTML = currentProductImages.map((src, idx) =>
+        '<div class="relative aspect-square rounded-xl overflow-hidden border bg-white">' +
+          '<img src="' + src + '" class="w-full h-full object-cover">' +
+          '<button type="button" onclick="removePreviewImage(' + idx + ')" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 text-white text-[10px] font-bold">✕</button>' +
+        '</div>'
+      ).join('');
     }
 
     function removePreviewImage(idx) {
@@ -349,23 +384,29 @@
 
     function openProductForm(id = null) {
       currentProductImages = [];
+      const varContainer = document.getElementById('variantsContainer');
+      varContainer.innerHTML = '';
+
       if (id && dbState.products[id]) {
         const p = dbState.products[id];
         document.getElementById('prodFormTitle').innerText = "পণ্য এডিট করুন";
         document.getElementById('editProdId').value = p.id;
         document.getElementById('prodName').value = p.name;
         document.getElementById('prodCategory').value = p.category || 'honey';
-        document.getElementById('prodOrigPrice').value = p.originalPrice || '';
-        document.getElementById('prodSalePrice').value = p.salePrice;
         document.getElementById('prodDesc').value = p.description || '';
         currentProductImages = (p.images && p.images.length) ? [...p.images] : (p.image ? [p.image] : []);
+
+        if (p.variants && p.variants.length) {
+          p.variants.forEach(v => addVariantRow(v.label, v.originalPrice || '', v.salePrice));
+        } else {
+          addVariantRow('1 kg', p.originalPrice || '', p.salePrice || '');
+        }
       } else {
         document.getElementById('prodFormTitle').innerText = "নতুন পণ্য যোগ করুন";
         document.getElementById('editProdId').value = "";
         document.getElementById('prodName').value = "";
-        document.getElementById('prodOrigPrice').value = "";
-        document.getElementById('prodSalePrice').value = "";
         document.getElementById('prodDesc').value = "";
+        addVariantRow('1 kg', '', '');
       }
       renderImagePreviews();
       document.getElementById('productFormModal').classList.remove('hidden');
@@ -375,26 +416,42 @@
       const id = document.getElementById('editProdId').value || ("prod_" + Date.now());
       const name = document.getElementById('prodName').value.trim();
       const category = document.getElementById('prodCategory').value;
-      const originalPrice = document.getElementById('prodOrigPrice').value;
-      const salePrice = document.getElementById('prodSalePrice').value;
       const description = document.getElementById('prodDesc').value.trim();
 
-      if (!name || !salePrice) return alert("পণ্যের নাম এবং বিক্রয় মূল্য অবশ্যই দিতে হবে।");
+      const variants = [];
+      document.querySelectorAll('#variantsContainer .variant-row').forEach(row => {
+        const label = row.querySelector('.var-label').value.trim();
+        const orig = row.querySelector('.var-orig').value;
+        const sale = row.querySelector('.var-sale').value;
+        if (label && sale) {
+          variants.push({
+            label: label,
+            originalPrice: orig ? Number(orig) : null,
+            salePrice: Number(sale)
+          });
+        }
+      });
+
+      if (!name) return alert("পণ্যের নাম লিখুন।");
+      if (variants.length === 0) return alert("অন্তত একটি পরিমাণ (যেমন: 1 kg বা একটি) এবং তার বিক্রয় দাম দিন।");
 
       const btn = document.getElementById('saveProdBtn');
       btn.disabled = true;
       btn.innerText = "পাবলিশ হচ্ছে...";
 
       const productObj = {
-        id, name, category,
-        originalPrice: originalPrice ? Number(originalPrice) : null,
-        salePrice: Number(salePrice),
+        id: id,
+        name: name,
+        category: category,
+        originalPrice: variants[0].originalPrice,
+        salePrice: variants[0].salePrice,
+        variants: variants,
         images: currentProductImages,
-        description
+        description: description
       };
 
       try {
-        await fetch(`${FIREBASE_DB_URL}/khidmatun_nas/products/${id}.json`, {
+        await fetch(FIREBASE_DB_URL + '/khidmatun_nas/products/' + id + '.json', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(productObj)
@@ -412,7 +469,7 @@
 
     async function deleteProduct(id) {
       if (!confirm("আপনি কি নিশ্চিতভাবে এই পণ্যটি মুছে ফেলতে চান?")) return;
-      await fetch(`${FIREBASE_DB_URL}/khidmatun_nas/products/${id}.json`, { method: 'DELETE' });
+      await fetch(FIREBASE_DB_URL + '/khidmatun_nas/products/' + id + '.json', { method: 'DELETE' });
       loadAllData();
     }
 
@@ -434,20 +491,19 @@
         outsideCharge: Number(document.getElementById('setOutsideCharge').value),
         adminPin: document.getElementById('setPin').value.trim() || "1234"
       };
-      await fetch(`${FIREBASE_DB_URL}/khidmatun_nas/settings.json`, {
+      await fetch(FIREBASE_DB_URL + '/khidmatun_nas/settings.json', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updated)
       });
       await loadAllData();
-      alert("✅ সেটিংস সেভ হয়েছে! এখন থেকে সব কাস্টমার নতুন নাম্বার দেখতে পাবেন।");
+      alert("✅ সেটিংস সেভ হয়েছে!");
     }
 
     function closeModal(id) {
       document.getElementById(id).classList.add('hidden');
     }
 
-    // প্রতি ১৫ সেকেন্ড পরপর নতুন অর্ডার চেক করা
     setInterval(() => {
       if (!document.getElementById('adminMainApp').classList.contains('hidden')) {
         loadAllData();
