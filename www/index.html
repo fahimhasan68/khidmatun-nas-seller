@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>সেলার প্যানেল - খিদমাতুন নাস</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Hind Siliguri', sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: #f1f5f9; color: #0f172a; }
+  </style>
+</head>
+<body class="pb-16 select-none">
+
+  <script>
+    // 🔥 Buyer App-এ যে Firebase URL দিয়েছেন, ঠিক সেই একই URL এখানে বসান
+    const FIREBASE_DB_URL = "https://YOUR-PROJECT-ID-default-rtdb.firebaseio.com";
+  </script>
+
+  <!-- পিন লক স্ক্রিন -->
+  <div id="pinLockScreen" class="fixed inset-0 z-50 bg-emerald-950 text-white flex flex-col items-center justify-center p-6">
+    <div class="w-16 h-16 rounded-2xl bg-amber-500 text-emerald-950 flex items-center justify-center text-3xl font-bold mb-4 shadow-lg">🔐</div>
+    <h1 class="text-xl font-bold text-amber-300 mb-1">খিদমাতুন নাস - সেলার অ্যাপ</h1>
+    <p class="text-xs text-emerald-200 mb-6">অ্যাডমিন প্যানেলে প্রবেশ করতে পিন দিন (ডিফল্ট: 1234)</p>
+    <input type="password" id="pinInput" maxlength="6" placeholder="••••" class="w-48 text-center tracking-widest text-2xl font-bold py-3 rounded-2xl bg-emerald-900 border border-emerald-700 text-white focus:outline-none focus:border-amber-400 mb-4">
+    <button onclick="unlockAdmin()" class="w-48 py-3 rounded-2xl bg-amber-500 text-emerald-950 font-bold text-sm shadow-lg">প্রবেশ করুন</button>
+  </div>
+
+  <!-- সেলার ড্যাশবোর্ড -->
+  <div id="adminMainApp" class="hidden">
+    <header class="sticky top-0 z-40 bg-slate-900 text-white px-4 py-3 flex items-center justify-between shadow">
+      <div>
+        <h1 class="text-base font-bold text-amber-400">⚙️ সেলার অ্যাডমিন প্যানেল</h1>
+        <p class="text-[11px] text-slate-300" id="syncStatusText">ক্লাউড সিঙ্ক সক্রিয়</p>
+      </div>
+      <button onclick="loadAllData()" class="px-3 py-1.5 rounded-lg bg-emerald-700 text-xs font-bold">🔄 রিফ্রেশ</button>
+    </header>
+
+    <!-- নেভিগেশন ট্যাব -->
+    <div class="bg-white border-b px-4 py-2.5 flex gap-2 sticky top-[56px] z-30">
+      <button onclick="switchTab('orders')" id="tabOrders" class="flex-1 py-2 rounded-xl bg-emerald-800 text-white text-xs font-bold">📦 অর্ডার (<span id="orderCountBadge">0</span>)</button>
+      <button onclick="switchTab('products')" id="tabProducts" class="flex-1 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold">🍯 পণ্য (<span id="prodCountBadge">0</span>)</button>
+      <button onclick="switchTab('settings')" id="tabSettings" class="flex-1 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold">⚙️ সেটিংস</button>
+    </div>
+
+    <main class="max-w-3xl mx-auto p-4">
+
+      <!-- ১. অর্ডার ম্যানেজমেন্ট ট্যাব -->
+      <div id="viewOrders" class="space-y-3"></div>
+
+      <!-- ২. প্রোডাক্ট ম্যানেজমেন্ট ট্যাব -->
+      <div id="viewProducts" class="hidden space-y-4">
+        <button onclick="openProductForm()" class="w-full py-3 rounded-2xl bg-emerald-800 text-white font-bold text-sm shadow-md">
+          + নতুন পণ্য ও একাধিক ছবি যোগ করুন
+        </button>
+        <div id="adminProductList" class="space-y-2.5"></div>
+      </div>
+
+      <!-- ৩. সেটিংস ট্যাব -->
+      <div id="viewSettings" class="hidden space-y-4 bg-white p-4 rounded-2xl border shadow-xs">
+        <h3 class="font-bold text-sm text-slate-800 border-b pb-2">🏪 দোকান ও পেমেন্ট নাম্বার সেটিংস</h3>
+        <div class="space-y-3 text-xs">
+          <div>
+            <label class="font-bold text-slate-600">দোকানের নাম</label>
+            <input type="text" id="setStoreName" class="w-full mt-1 px-3 py-2.5 rounded-xl border">
+          </div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="font-bold text-pink-700">bKash পার্সোনাল নাম্বার</label>
+              <input type="text" id="setBkash" class="w-full mt-1 px-3 py-2.5 rounded-xl border font-mono">
+            </div>
+            <div>
+              <label class="font-bold text-orange-700">Nagad পার্সোনাল নাম্বার</label>
+              <input type="text" id="setNagad" class="w-full mt-1 px-3 py-2.5 rounded-xl border font-mono">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="font-bold text-slate-600">শহরের ভেতরে ডেলিভারি (৳)</label>
+              <input type="number" id="setInsideCharge" class="w-full mt-1 px-3 py-2.5 rounded-xl border">
+            </div>
+            <div>
+              <label class="font-bold text-slate-600">সারা দেশে ডেলিভারি (৳)</label>
+              <input type="number" id="setOutsideCharge" class="w-full mt-1 px-3 py-2.5 rounded-xl border">
+            </div>
+          </div>
+          <div>
+            <label class="font-bold text-slate-600">সেলার অ্যাপ লক পিন</label>
+            <input type="text" id="setPin" class="w-full mt-1 px-3 py-2.5 rounded-xl border font-mono">
+          </div>
+          <button onclick="saveSettings()" class="w-full py-3 rounded-xl bg-emerald-800 text-white font-bold text-sm shadow">
+            💾 সেটিংস সেভ করুন (সব বায়ার অ্যাপে আপডেট হবে)
+          </button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- প্রোডাক্ট অ্যাড/এডিট মোডাল (একাধিক ছবিসহ) -->
+  <div id="productFormModal" class="hidden fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center">
+    <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] flex flex-col overflow-hidden">
+      <div class="p-4 border-b bg-slate-900 text-white flex justify-between items-center">
+        <h3 id="prodFormTitle" class="font-bold text-sm">নতুন পণ্য যোগ করুন</h3>
+        <button onclick="closeModal('productFormModal')" class="w-7 h-7 rounded-full bg-slate-700 text-xs">✕</button>
+      </div>
+      <div class="p-4 overflow-y-auto space-y-3 text-xs">
+        <input type="hidden" id="editProdId">
+        <div>
+          <label class="font-bold text-slate-700">পণ্যের নাম *</label>
+          <input type="text" id="prodName" placeholder="যেমন: সুন্দরবনের খাঁটি খলিশা মধু (১ কেজি)" class="w-full mt-1 px-3 py-2.5 rounded-xl border">
+        </div>
+        <div>
+          <label class="font-bold text-slate-700">ক্যাটাগরি</label>
+          <select id="prodCategory" class="w-full mt-1 px-3 py-2.5 rounded-xl border bg-white">
+            <option value="honey">🍯 খাঁটি মধু</option>
+            <option value="attar">🧴 রাজকীয় আতর</option>
+            <option value="combo">🎁 কম্বো প্যাক</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="font-bold text-slate-700">আগের দাম (কাটা থাকবে)</label>
+            <input type="number" id="prodOrigPrice" placeholder="যেমন: 500" class="w-full mt-1 px-3 py-2.5 rounded-xl border">
+          </div>
+          <div>
+            <label class="font-bold text-emerald-800">বর্তমান বিক্রয় মূল্য *</label>
+            <input type="number" id="prodSalePrice" placeholder="যেমন: 400" class="w-full mt-1 px-3 py-2.5 rounded-xl border">
+          </div>
+        </div>
+
+        <!-- একাধিক ছবি আপলোড সেকশন -->
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="font-bold text-slate-700">পণ্যের ছবি (একাধিক ছবি যোগ করা যাবে)</label>
+            <label class="px-3 py-1.5 rounded-lg bg-emerald-800 text-white font-bold cursor-pointer">
+              📷 ছবি নির্বাচন করুন
+              <input type="file" accept="image/*" multiple onchange="handleMultiImageUpload(event)" class="hidden">
+            </label>
+          </div>
+          <p class="text-[11px] text-slate-500">গ্যালারি থেকে একসাথে একাধিক ছবি সিলেক্ট করতে পারবেন বা বারবার যোগ করতে পারবেন।</p>
+          <div id="multiImagePreviewGrid" class="grid grid-cols-4 gap-2 pt-1"></div>
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700">পণ্যের বিস্তারিত বিবরণ</label>
+          <textarea id="prodDesc" rows="3" placeholder="মধুর উৎস বা আতরের ঘ্রাণ সম্পর্কে লিখুন..." class="w-full mt-1 px-3 py-2.5 rounded-xl border"></textarea>
+        </div>
+      </div>
+      <div class="p-4 border-t bg-slate-50">
+        <button onclick="saveProduct()" id="saveProdBtn" class="w-full py-3 rounded-xl bg-emerald-800 text-white font-bold text-sm shadow">
+          ✅ পণ্য সেভ ও পাবলিশ করুন
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let dbState = {
+      settings: {
+        storeName: "খিদমাতুন নাস",
+        bkash: "01700-000000",
+        nagad: "01700-000000",
+        insideCharge: 60,
+        outsideCharge: 120,
+        adminPin: "1234"
+      },
+      products: {},
+      orders: {}
+    };
+
+    let currentProductImages = [];
+
+    function unlockAdmin() {
+      const entered = document.getElementById('pinInput').value;
+      if (entered === (dbState.settings.adminPin || "1234")) {
+        document.getElementById('pinLockScreen').classList.add('hidden');
+        document.getElementById('adminMainApp').classList.remove('hidden');
+        loadAllData();
+      } else {
+        alert("ভুল পিন! ডিফল্ট পিন 1234 দিয়ে চেষ্টা করুন।");
+      }
+    }
+
+    async function loadAllData() {
+      if (!FIREBASE_DB_URL || FIREBASE_DB_URL.includes("YOUR-PROJECT-ID")) {
+        alert("⚠️ অনুগ্রহ করে কোডে আপনার Firebase URL বসান।");
+        return;
+      }
+      document.getElementById('syncStatusText').innerText = "সিঙ্ক হচ্ছে...";
+      try {
+        const res = await fetch(`${FIREBASE_DB_URL}/khidmatun_nas.json`);
+        const data = await res.json();
+        if (data) {
+          if (data.settings) dbState.settings = { ...dbState.settings, ...data.settings };
+          dbState.products = data.products || {};
+          dbState.orders = data.orders || {};
+        }
+        document.getElementById('syncStatusText').innerText = "✅ সর্বশেষ আপডেট সিঙ্ক করা হয়েছে";
+        populateSettings();
+        renderOrders();
+        renderAdminProducts();
+      } catch (e) {
+        document.getElementById('syncStatusText').innerText = "❌ ইন্টারনেট সংযোগ নেই";
+      }
+    }
+
+    function switchTab(tab) {
+      ['orders', 'products', 'settings'].forEach(t => {
+        document.getElementById(`view${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.add('hidden');
+        const btn = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        btn.classList.remove('bg-emerald-800', 'text-white');
+        btn.classList.add('bg-slate-100', 'text-slate-700');
+      });
+      document.getElementById(`view${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
+      activeBtn.classList.remove('bg-slate-100', 'text-slate-700');
+      activeBtn.classList.add('bg-emerald-800', 'text-white');
+    }
+
+    // অর্ডার লিস্ট রেন্ডার
+    function renderOrders() {
+      const container = document.getElementById('viewOrders');
+      const orderArr = Object.values(dbState.orders).filter(Boolean).reverse();
+      document.getElementById('orderCountBadge').innerText = orderArr.length;
+
+      if (orderArr.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 text-slate-400 text-sm bg-white rounded-2xl border">এখনো কোনো অর্ডার আসেনি।</div>`;
+        return;
+      }
+
+      container.innerHTML = orderArr.map(o => `
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-2.5 text-xs">
+          <div class="flex justify-between items-center border-b pb-2">
+            <div>
+              <span class="font-mono font-bold text-sm text-emerald-900">#${o.id}</span>
+              <span class="text-[11px] text-slate-400 block">${o.date || ''}</span>
+            </div>
+            <select onchange="updateOrderStatus('${o.id}', this.value)" class="px-2.5 py-1 rounded-lg border font-bold bg-amber-50 text-amber-900">
+              <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>⏳ Pending (নতুন)</option>
+              <option value="Confirmed" ${o.status === 'Confirmed' ? 'selected' : ''}>✅ Confirmed</option>
+              <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>🚚 Delivered</option>
+              <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>❌ Cancelled</option>
+            </select>
+          </div>
+
+          <div class="space-y-1">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-sm text-slate-800">👤 ${o.customerName}</span>
+              <a href="tel:${o.customerPhone}" class="px-3 py-1 rounded-lg bg-emerald-700 text-white font-bold">📲 কল: ${o.customerPhone}</a>
+            </div>
+            <p class="text-slate-600">📍 ${o.customerAddress}</p>
+          </div>
+
+          <div class="bg-slate-50 p-2.5 rounded-xl border space-y-1">
+            ${(o.items || []).map(i => `<div class="flex justify-between"><span>• ${i.name} × ${i.qty}</span><span>৳${i.price * i.qty}</span></div>`).join('')}
+            <div class="flex justify-between font-bold text-emerald-900 pt-1 border-t">
+              <span>মোট বিল:</span><span>৳${o.totalAmount}</span>
+            </div>
+          </div>
+
+          <div class="flex justify-between items-center bg-pink-50 px-3 py-2 rounded-xl border border-pink-200">
+            <span class="font-bold text-pink-800">💳 ${o.paymentMethod} TrxID:</span>
+            <span class="font-mono font-bold text-sm text-pink-950">${o.trxId}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function updateOrderStatus(orderId, newStatus) {
+      await fetch(`${FIREBASE_DB_URL}/khidmatun_nas/orders/${orderId}/status.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newStatus)
+      });
+      loadAllData();
+    }
+
+    // প্রোডাক্ট লিস্ট রেন্ডার
+    function renderAdminProducts() {
+      const container = document.getElementById('adminProductList');
+      const prodArr = Object.values(dbState.products).filter(Boolean);
+      document.getElementById('prodCountBadge').innerText = prodArr.length;
+
+      container.innerHTML = prodArr.map(p => {
+        const imgs = (p.images && p.images.length) ? p.images : (p.image ? [p.image] : []);
+        return `
+          <div class="bg-white p-3 rounded-2xl border flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <img src="${imgs[0] || ''}" class="w-14 h-14 rounded-xl object-cover bg-slate-100 border">
+              <div>
+                <h4 class="font-bold text-xs sm:text-sm text-slate-800">${p.name}</h4>
+                <div class="text-xs mt-0.5">
+                  <span class="font-bold text-emerald-800">৳${p.salePrice}</span>
+                  ${p.originalPrice ? `<span class="line-through text-slate-400 ml-1">৳${p.originalPrice}</span>` : ''}
+                  <span class="ml-2 text-[11px] bg-slate-100 px-1.5 py-0.5 rounded">📷 ${imgs.length}টি ছবি</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <button onclick="openProductForm('${p.id}')" class="px-3 py-1 rounded-lg bg-amber-100 text-amber-900 text-xs font-bold">✏️ এডিট</button>
+              <button onclick="deleteProduct('${p.id}')" class="px-3 py-1 rounded-lg bg-red-100 text-red-700 text-xs font-bold">🗑️ ডিলিট</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // একাধিক ছবি কমপ্রেস ও আপলোড হ্যান্ডলার
+    function handleMultiImageUpload(event) {
+      const files = Array.from(event.target.files);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const MAX_SIZE = 700;
+            let w = img.width, h = img.height;
+            if (w > h && w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; }
+            else if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; }
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.78);
+            currentProductImages.push(compressedDataUrl);
+            renderImagePreviews();
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function renderImagePreviews() {
+      const grid = document.getElementById('multiImagePreviewGrid');
+      grid.innerHTML = currentProductImages.map((src, idx) => `
+        <div class="relative aspect-square rounded-xl overflow-hidden border bg-white">
+          <img src="${src}" class="w-full h-full object-cover">
+          <button type="button" onclick="removePreviewImage(${idx})" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 text-white text-[10px] font-bold">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function removePreviewImage(idx) {
+      currentProductImages.splice(idx, 1);
+      renderImagePreviews();
+    }
+
+    function openProductForm(id = null) {
+      currentProductImages = [];
+      if (id && dbState.products[id]) {
+        const p = dbState.products[id];
+        document.getElementById('prodFormTitle').innerText = "পণ্য এডিট করুন";
+        document.getElementById('editProdId').value = p.id;
+        document.getElementById('prodName').value = p.name;
+        document.getElementById('prodCategory').value = p.category || 'honey';
+        document.getElementById('prodOrigPrice').value = p.originalPrice || '';
+        document.getElementById('prodSalePrice').value = p.salePrice;
+        document.getElementById('prodDesc').value = p.description || '';
+        currentProductImages = (p.images && p.images.length) ? [...p.images] : (p.image ? [p.image] : []);
+      } else {
+        document.getElementById('prodFormTitle').innerText = "নতুন পণ্য যোগ করুন";
+        document.getElementById('editProdId').value = "";
+        document.getElementById('prodName').value = "";
+        document.getElementById('prodOrigPrice').value = "";
+        document.getElementById('prodSalePrice').value = "";
+        document.getElementById('prodDesc').value = "";
+      }
+      renderImagePreviews();
+      document.getElementById('productFormModal').classList.remove('hidden');
+    }
+
+    async function saveProduct() {
+      const id = document.getElementById('editProdId').value || ("prod_" + Date.now());
+      const name = document.getElementById('prodName').value.trim();
+      const category = document.getElementById('prodCategory').value;
+      const originalPrice = document.getElementById('prodOrigPrice').value;
+      const salePrice = document.getElementById('prodSalePrice').value;
+      const description = document.getElementById('prodDesc').value.trim();
+
+      if (!name || !salePrice) return alert("পণ্যের নাম এবং বিক্রয় মূল্য অবশ্যই দিতে হবে।");
+
+      const btn = document.getElementById('saveProdBtn');
+      btn.disabled = true;
+      btn.innerText = "পাবলিশ হচ্ছে...";
+
+      const productObj = {
+        id, name, category,
+        originalPrice: originalPrice ? Number(originalPrice) : null,
+        salePrice: Number(salePrice),
+        images: currentProductImages,
+        description
+      };
+
+      try {
+        await fetch(`${FIREBASE_DB_URL}/khidmatun_nas/products/${id}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(productObj)
+        });
+        closeModal('productFormModal');
+        await loadAllData();
+        alert("✅ পণ্যটি সফলভাবে পাবলিশ হয়েছে এবং সব বায়ার অ্যাপে আপডেট হয়ে গেছে!");
+      } catch (e) {
+        alert("সেভ করতে সমস্যা হয়েছে, ইন্টারনেট চেক করুন।");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "✅ পণ্য সেভ ও পাবলিশ করুন";
+      }
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm("আপনি কি নিশ্চিতভাবে এই পণ্যটি মুছে ফেলতে চান?")) return;
+      await fetch(`${FIREBASE_DB_URL}/khidmatun_nas/products/${id}.json`, { method: 'DELETE' });
+      loadAllData();
+    }
+
+    function populateSettings() {
+      document.getElementById('setStoreName').value = dbState.settings.storeName || "খিদমাতুন নাস";
+      document.getElementById('setBkash').value = dbState.settings.bkash || "";
+      document.getElementById('setNagad').value = dbState.settings.nagad || "";
+      document.getElementById('setInsideCharge').value = dbState.settings.insideCharge || 60;
+      document.getElementById('setOutsideCharge').value = dbState.settings.outsideCharge || 120;
+      document.getElementById('setPin').value = dbState.settings.adminPin || "1234";
+    }
+
+    async function saveSettings() {
+      const updated = {
+        storeName: document.getElementById('setStoreName').value.trim(),
+        bkash: document.getElementById('setBkash').value.trim(),
+        nagad: document.getElementById('setNagad').value.trim(),
+        insideCharge: Number(document.getElementById('setInsideCharge').value),
+        outsideCharge: Number(document.getElementById('setOutsideCharge').value),
+        adminPin: document.getElementById('setPin').value.trim() || "1234"
+      };
+      await fetch(`${FIREBASE_DB_URL}/khidmatun_nas/settings.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      });
+      await loadAllData();
+      alert("✅ সেটিংস সেভ হয়েছে! এখন থেকে সব কাস্টমার নতুন নাম্বার দেখতে পাবেন।");
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    // প্রতি ১৫ সেকেন্ড পরপর নতুন অর্ডার চেক করা
+    setInterval(() => {
+      if (!document.getElementById('adminMainApp').classList.contains('hidden')) {
+        loadAllData();
+      }
+    }, 15000);
+  </script>
+</body>
+</html>
